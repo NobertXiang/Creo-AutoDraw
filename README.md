@@ -28,17 +28,15 @@
 
 ## 模板配置
 
-插件默认使用模板名：
+插件默认模板直接读取 `config.pro`：
 
-- `GB_A3`
-
-如果你的模板名不同，请在系统环境变量中设置：
-
-- `CREO_GB_DRAWING_TEMPLATE=你的模板名`
+- `template_drawing`
 
 例如：
 
-- `CREO_GB_DRAWING_TEMPLATE=STD_A3_GB`
+- `template_drawing D:\ptc\templates\STD_A3_GB.drw`
+
+插件会自动从该路径解析模板模型名并创建工程图。
 
 可选地，你还可以设置基础视图比例：
 
@@ -73,8 +71,8 @@
 
 加载后，在 Creo 顶部菜单中找到：
 
-- `Auto Drawing`
-- `Create GB Drawing`
+- `自动出图`
+- `一键生成工程图`
 
 点击后即可为当前零件/装配生成同名工程图。
 

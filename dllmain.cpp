@@ -10,6 +10,7 @@
 #include <ProDrawing.h>
 #include <ProMdl.h>
 #include <ProMenuBar.h>
+#include <ProUtil.h>
 
 namespace
 {
@@ -20,7 +21,6 @@ constexpr char kButtonName[] = "CreateGbDrawingButton";
 constexpr char kButtonLabelKey[] = "CreateGbDrawingLabel";
 constexpr char kButtonHelpKey[] = "CreateGbDrawingHelp";
 constexpr wchar_t kMessageFileName[] = L"creo_autodraw_messages.txt";
-constexpr wchar_t kDefaultTemplateName[] = L"GB_A3";
 constexpr wchar_t kDialogTitle[] = L"Creo Auto Drawing";
 constexpr double kDefaultPaperWidthInch = 16.5354;
 constexpr double kDefaultPaperHeightInch = 11.6929;
@@ -49,16 +49,46 @@ void CopyWideString(const wchar_t* source, wchar_t* destination, size_t destinat
     wcsncpy_s(destination, destinationSize, source, _TRUNCATE);
 }
 
-std::wstring GetTemplateName()
+std::wstring ExtractModelNameFromPath(const wchar_t* modelPath)
 {
-    wchar_t buffer[PRO_MDLNAME_SIZE]{};
-    const DWORD valueLength = GetEnvironmentVariableW(L"CREO_GB_DRAWING_TEMPLATE", buffer, static_cast<DWORD>(_countof(buffer)));
-    if (valueLength > 0 && valueLength < _countof(buffer))
+    if (modelPath == nullptr || modelPath[0] == L'\0')
     {
-        return buffer;
+        return L"";
     }
 
-    return kDefaultTemplateName;
+    const wchar_t* fileName = modelPath;
+    const wchar_t* slash1 = wcsrchr(modelPath, L'\\');
+    const wchar_t* slash2 = wcsrchr(modelPath, L'/');
+    if (slash1 != nullptr || slash2 != nullptr)
+    {
+        const wchar_t* slash = (slash1 == nullptr) ? slash2 : ((slash2 == nullptr) ? slash1 : (slash1 > slash2 ? slash1 : slash2));
+        fileName = slash + 1;
+    }
+
+    std::wstring name = fileName;
+    const size_t dotPos = name.find_last_of(L'.');
+    if (dotPos != std::wstring::npos)
+    {
+        name = name.substr(0, dotPos);
+    }
+
+    return name;
+}
+
+ProError GetTemplateName(std::wstring& templateName)
+{
+    ProName optionName{};
+    CopyWideString(L"template_drawing", optionName, _countof(optionName));
+
+    ProPath optionValue{};
+    const ProError error = ProConfigoptionGet(optionName, optionValue);
+    if (error != PRO_TK_NO_ERROR)
+    {
+        return error;
+    }
+
+    templateName = ExtractModelNameFromPath(optionValue);
+    return templateName.empty() ? PRO_TK_E_NOT_FOUND : PRO_TK_NO_ERROR;
 }
 
 double GetConfiguredBaseScale()
@@ -152,8 +182,15 @@ ProError CreateGbDrawingForCurrentModel()
     ProMdlName drawingName{};
     CopyWideString(modelName, drawingName, _countof(drawingName));
 
+    std::wstring configuredTemplateName;
+    error = GetTemplateName(configuredTemplateName);
+    if (error != PRO_TK_NO_ERROR)
+    {
+        ShowMessage(L"未读取到 config.pro 中的 template_drawing 配置，请先设置默认工程图模板。", MB_OK | MB_ICONERROR);
+        return error;
+    }
+
     ProMdlName templateName{};
-    const std::wstring configuredTemplateName = GetTemplateName();
     CopyWideString(configuredTemplateName.c_str(), templateName, _countof(templateName));
 
     ProDrawing drawing = nullptr;
