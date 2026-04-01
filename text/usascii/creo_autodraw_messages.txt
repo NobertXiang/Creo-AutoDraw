@@ -1,0 +1,12 @@
+AutoDrawingMenuLabel
+Auto Drawing
+#
+#
+CreateGbDrawingLabel
+Create GB Drawing
+#
+#
+CreateGbDrawingHelp
+Create same-name drawing and place first-angle three views.
+#
+#

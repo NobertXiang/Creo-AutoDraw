@@ -1,0 +1,6 @@
+NAME       creo_autodraw
+EXEC_FILE  ./x86e_win64/obj/creo_autodraw.dll
+TEXT_DIR   ./text
+STARTUP    dll
+REVISION   18
+END
